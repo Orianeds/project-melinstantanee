@@ -40,15 +40,16 @@ class User implements PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?bool $isAdmin = false; // Valeur par défaut
 
-    /**
-     * @var Collection<int, Shooting>
-     */
+    // Dates de création et de mise à jour
+    #[ORM\Column(type: 'datetime_immutable')]
+    private ?\DateTimeInterface $createdAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    private ?\DateTimeInterface $updatedAt = null;
+
     #[ORM\OneToMany(targetEntity: Shooting::class, mappedBy: 'client')]
     private Collection|ArrayCollection $shootings;
 
-    /**
-     * @var Collection<int, PasswordCreationToken>
-     */
     #[ORM\OneToMany(targetEntity: PasswordCreationToken::class, mappedBy: 'client', orphanRemoval: true)]
     private Collection $passwordCreationTokens;
 
@@ -56,6 +57,8 @@ class User implements PasswordAuthenticatedUserInterface
     {
         $this->shootings = new ArrayCollection();
         $this->passwordCreationTokens = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable(); // Définir la date de création
+        $this->updatedAt = new \DateTimeImmutable(); // Définir la date de mise à jour
     }
 
     // Getter et Setter pour UUID
@@ -138,9 +141,6 @@ class User implements PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Shooting>
-     */
     public function getShootings(): Collection
     {
         return $this->shootings;
@@ -168,9 +168,6 @@ class User implements PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, PasswordCreationToken>
-     */
     public function getPasswordCreationTokens(): Collection
     {
         return $this->passwordCreationTokens;
@@ -196,5 +193,22 @@ class User implements PasswordAuthenticatedUserInterface
         }
 
         return $this;
+    }
+
+    // Getters et Setters pour les dates
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    #[ORM\PreUpdate]
+    public function setUpdatedAtValue(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
     }
 }
