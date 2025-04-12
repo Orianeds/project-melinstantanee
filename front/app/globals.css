@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+.custom-img{
+  background-image: url('/5.jpeg');
+  object-fit: fill;
+}
+
+.textInter{
+  font-family: var(--font-inter);
+}
+
+.textLibre {
+  font-family: var(--font-libre);
+}
+
+.slick-list, .slick-slider, .slick-track{
+  padding: 1rem 0;
+}
+
+#portfolio{
+  margin-top: 5rem;
+}
+
+input{
+  border-radius: 10px;
+}
+
+
