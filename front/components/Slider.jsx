@@ -3,7 +3,6 @@ import Slider from 'react-slick';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Portfolio from './Portfolio'
-import styled from 'styled-components';
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
 let data = [
@@ -99,23 +98,23 @@ const SliderComp = () => {
 
 export default SliderComp
 
-const Container = styled.div`
-position: relative;
-`
+// const Container = styled.div`
+// position: relative;
+// `
 
-const Buttons = styled.div`
-  button{
-    width: 2rem;
-    height: 2rem;
-    cursor: pointer;
-    color: #d3b8a5;
-    border: none;
-    position: absolute;
-    top: 45%;
-    right: -1.5rem;
-  }
+// const Buttons = styled.div`
+//   button{
+//     width: 2rem;
+//     height: 2rem;
+//     cursor: pointer;
+//     color: #d3b8a5;
+//     border: none;
+//     position: absolute;
+//     top: 45%;
+//     right: -1.5rem;
+//   }
 
-  .back{
-    left: -1rem;
-  }
-`
+//   .back{
+//     left: -1rem;
+//   }
+// `
