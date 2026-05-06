@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Libre_Caslon_Display, Inter } from 'next/font/google'
+import { Providers } from './providers'
 import './globals.css'
 
 const libreCaslonDisplay = Libre_Caslon_Display({ 
@@ -25,7 +26,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${libreCaslonDisplay.variable} ${inter.variable}`}>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }
