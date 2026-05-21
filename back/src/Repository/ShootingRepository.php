@@ -16,6 +16,27 @@ class ShootingRepository extends ServiceEntityRepository
         parent::__construct($registry, Shooting::class);
     }
 
+    public function findPublishedBySlug(string $slug): ?Shooting
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s.slug = :slug')
+            ->andWhere('s.isPublished = true')
+            ->setParameter('slug', $slug)
+            ->leftJoin('s.photos', 'p')
+            ->addSelect('p')
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findOneByToken(string $token): ?Shooting
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s.galleryToken = :token')
+            ->setParameter('token', $token)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return Shooting[] Returns an array of Shooting objects
     //     */

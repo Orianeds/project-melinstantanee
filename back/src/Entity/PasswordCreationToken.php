@@ -19,6 +19,8 @@ class PasswordCreationToken
     private ?User $client = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
+    #[Assert\Length(min:32)]
     private ?string $token = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -33,10 +35,10 @@ class PasswordCreationToken
     public function __construct()
     {
         // Initialisation de la date de création à la date actuelle
-        $this->createdAt = new \DateTime();
+        $this->createdAt = new \DateTimeImmutable();
 
         // Expiration du token dans 24 heures
-        $this->expiresAt = (new \DateTime())->modify('+1 day'); // Token valable 24h
+        $this->expiresAt = (new \DateTimeImmutable())->modify('+1 day'); // Token valable 24h
 
         // Initialisation de isUsed à false par défaut
         $this->isUsed = false;
