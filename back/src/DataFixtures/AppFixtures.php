@@ -49,7 +49,8 @@ class AppFixtures extends Fixture
         $shooting->setClient($client)
             ->setShootingDate(new \DateTimeImmutable('2024-12-15'))
             ->setStatus('terminé')
-            ->setDriveLink('https://drive.google.com/test');
+            
+            ->setGalleryToken(bin2hex(random_bytes(16)));
 
         $manager->persist($shooting);
 

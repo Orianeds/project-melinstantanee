@@ -24,7 +24,11 @@ class PasswordCreationController
             return new JsonResponse(['error' => 'Données invalides'], 400);
         }
 
-        $token = $tokenRepository->findOneBy(['token' => $data['token']]);
+        $hashedToken = hash('sha256', $data['token']);
+
+        $token = $tokenRepository->findOneBy([
+            'token' => $hashedToken
+]);
 
         if (!$token || $token->isUsed() || $token->isExpired()) {
             return new JsonResponse(['error' => 'Token invalide ou expiré'], 400);
@@ -39,5 +43,36 @@ class PasswordCreationController
         $em->flush();
 
         return new JsonResponse(['success' => true]);
+    }
+
+    #[Route('/api/password/validate-token', name: 'api_password_validate_token', methods: ['GET'])]
+    public function validateToken(
+        Request $request,
+        PasswordCreationTokenRepository $tokenRepository
+        ): JsonResponse {
+            $tokenValue = $request->query->get('token');
+
+            if (!$tokenValue) {
+                return new JsonResponse([
+                    'valid' => false,
+                    'error' => 'Token manquant'
+                ], 400);
+            }
+
+            $hashedToken = hash('sha256', $tokenValue);
+
+            $token = $tokenRepository->findOneBy([
+                'token' => $hashedToken
+            ]);
+
+            if (!$token || $token->isUsed() || $token->isExpired()) {
+                return new JsonResponse([
+                    'valid' => false
+                ], 400);
+            }
+
+            return new JsonResponse([
+                'valid' => true
+            ]);
     }
 }

@@ -52,10 +52,11 @@ class UserCrudController extends AbstractCrudController
 
         // Génération du token
         $tokenValue = bin2hex(random_bytes(32));
+        $hashedToken = hash('sha256', $tokenValue);
 
         $token = new PasswordCreationToken();
         $token->setClient($entityInstance);
-        $token->setToken($tokenValue);
+        $token->setToken($hashedToken);
 
         $entityManager->persist($token);
         $entityManager->flush();
