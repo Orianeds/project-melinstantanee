@@ -3,14 +3,15 @@
 namespace App\Entity;
 
 use App\Repository\ShootingRepository;
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 
 #[ORM\Entity(repositoryClass: ShootingRepository::class)]
-#[ORM\HasLifecycleCallbacks] // Assure que les callbacks de Doctrine (comme PreUpdate) soient exécutés
+#[ORM\HasLifecycleCallbacks]
 class Shooting
 {
     #[ORM\Id]
@@ -18,58 +19,110 @@ class Shooting
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    // Définir client_id comme un UUID
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'shootings')]
-    #[ORM\JoinColumn(name: 'client_id', referencedColumnName: 'id', nullable: false)]
+    #[ORM\JoinColumn(name: 'client_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private ?User $client = null;
 
-    // Date du shooting
-    #[ORM\Column(type: 'datetime')]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Assert\NotBlank]
     private \DateTimeInterface $shootingDate;
 
-    // Statut du shooting (par exemple, "en cours", "terminé", "annulé")
+    #[ORM\Column(length: 255, unique: true)]
+    private ?string $slug = null;
+
     #[ORM\Column(type: 'string', length: 50)]
     #[Assert\NotBlank]
-    #[Assert\Choice(choices: ['en cours', 'terminé', 'annulé'], message: 'Statut invalide.')]
-    private string $status;
+    #[Assert\Choice(
+        choices: ['en cours', 'terminé', 'annulé'],
+        message: 'Statut invalide.'
+    )]
+    private string $status = 'en cours';
 
-    // Lien vers le dossier du drive (pour stocker les photos)
-    #[ORM\Column(type: 'string', length: 255)]
-    #[Assert\Url]
-    private ?string $driveLink = null;
+    #[ORM\Column(length: 255, unique: true)]
+    private ?string $galleryToken = null;
 
-    // Relation OneToMany avec l'entité Photo
-    #[ORM\OneToMany(mappedBy: 'shooting', targetEntity: Photo::class, orphanRemoval: true)]
+    /**
+     * ID unique du dossier Google Drive
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $driveFolderId = null;
+
+    /**
+     * Nom du dossier Google Drive
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $driveFolderName = null;
+
+    /**
+     * URL miniature affichée côté front
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $coverPhotoUrl = null;
+
+    /**
+     * Permet à la photographe de publier ou masquer une galerie
+     */
+    #[ORM\Column]
+    private bool $isPublished = false;
+
+    #[ORM\OneToMany(
+        mappedBy: 'shooting',
+        targetEntity: Photo::class,
+        orphanRemoval: true
+    )]
     private Collection $photos;
 
-    // Notes (optionnelles)
-    #[ORM\Column(type: 'text', nullable: true)]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
 
-    // Date de création
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    private \DateTimeInterface $createdAt;
+    private \DateTimeImmutable $createdAt;
 
-    // Date de mise à jour
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $updatedAt = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private \DateTimeImmutable $updatedAt;
 
     public function __construct()
     {
-        // Initialisation des dates
-        $this->createdAt = new \DateTime();
-        $this->status = 'en cours';  // Valeur par défaut
         $this->photos = new ArrayCollection();
+
+        $this->galleryToken = bin2hex(random_bytes(32));
+
+        $this->status = 'en cours';
+
+        $this->createdAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
-    // Getter et Setter pour l'ID
+    #[ORM\PreUpdate]
+    public function updateTimestamp(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    #[ORM\PrePersist]
+    public function generateSlug(): void
+    {
+        if ($this->slug === null) {
+            $slugger = new AsciiSlugger();
+
+            $clientName = $this->client?->getName() ?? 'shooting';
+            $date = $this->shootingDate?->format('Y-m-d') ?? time();
+
+            $this->slug = strtolower(
+                $slugger->slug($clientName . '-' . $date)
+            );
+        }
+    }
+
+    // =========================
+    // GETTERS / SETTERS
+    // =========================
+
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    // Getter et Setter pour le client (User)
     public function getClient(): ?User
     {
         return $this->client;
@@ -82,7 +135,6 @@ class Shooting
         return $this;
     }
 
-    // Getter et Setter pour la date du shooting
     public function getShootingDate(): \DateTimeInterface
     {
         return $this->shootingDate;
@@ -95,7 +147,18 @@ class Shooting
         return $this;
     }
 
-    // Getter et Setter pour le statut
+    public function getSlug(): string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
     public function getStatus(): string
     {
         return $this->status;
@@ -108,20 +171,66 @@ class Shooting
         return $this;
     }
 
-    // Getter et Setter pour le lien vers le dossier du drive
-    public function getDriveLink(): ?string
+    public function getGalleryToken(): ?string
     {
-        return $this->driveLink;
+        return $this->galleryToken;
     }
 
-    public function setDriveLink(string $driveLink): static
+    public function setGalleryToken(string $galleryToken): static
     {
-        $this->driveLink = $driveLink;
+        $this->galleryToken = $galleryToken;
 
         return $this;
     }
 
-    // Getter et Setter pour les photos (relation OneToMany)
+    public function getDriveFolderId(): ?string
+    {
+        return $this->driveFolderId;
+    }
+
+    public function setDriveFolderId(?string $driveFolderId): static
+    {
+        $this->driveFolderId = $driveFolderId;
+
+        return $this;
+    }
+
+    public function getDriveFolderName(): ?string
+    {
+        return $this->driveFolderName;
+    }
+
+    public function setDriveFolderName(?string $driveFolderName): static
+    {
+        $this->driveFolderName = $driveFolderName;
+
+        return $this;
+    }
+
+    public function getCoverPhotoUrl(): ?string
+    {
+        return $this->coverPhotoUrl;
+    }
+
+    public function setCoverPhotoUrl(?string $coverPhotoUrl): static
+    {
+        $this->coverPhotoUrl = $coverPhotoUrl;
+
+        return $this;
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->isPublished;
+    }
+
+    public function setIsPublished(bool $isPublished): static
+    {
+        $this->isPublished = $isPublished;
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, Photo>
      */
@@ -143,7 +252,6 @@ class Shooting
     public function removePhoto(Photo $photo): static
     {
         if ($this->photos->removeElement($photo)) {
-            // mettre le côté propriétaire à null (à moins qu'il ait déjà été modifié)
             if ($photo->getShooting() === $this) {
                 $photo->setShooting(null);
             }
@@ -152,7 +260,6 @@ class Shooting
         return $this;
     }
 
-    // Getter et Setter pour les notes
     public function getNotes(): ?string
     {
         return $this->notes;
@@ -165,22 +272,13 @@ class Shooting
         return $this;
     }
 
-    // Getter et Setter pour createdAt
-    public function getCreatedAt(): \DateTimeInterface
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    // Getter et Setter pour updatedAt
-    public function getUpdatedAt(): ?\DateTimeInterface
+    public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
-    }
-
-    // Callback lifecycle method pour update updatedAt à chaque mise à jour
-    #[ORM\PreUpdate]
-    public function updateUpdatedAt(): void
-    {
-        $this->updatedAt = new \DateTime();  // Met à jour la date de mise à jour avant la sauvegarde en base
     }
 }

@@ -16,6 +16,21 @@ class PhotoRepository extends ServiceEntityRepository
         parent::__construct($registry, Photo::class);
     }
 
+    public function findPaginatedByShooting(
+        int $shootingId,
+        int $limit,
+        int $offset
+    ): array {
+        return $this->createQueryBuilder('p')
+            ->where('p.shooting = :id')
+            ->setParameter('id', $shootingId)
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->orderBy('p.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Photo[] Returns an array of Photo objects
     //     */

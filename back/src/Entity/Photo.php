@@ -30,12 +30,12 @@ class Photo
     private ?string $description = null;
 
     #[ORM\ManyToOne(targetEntity: Shooting::class, inversedBy: 'photos')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Shooting $shooting = null;
 
     public function __construct()
     {
-        $this->createdAt = new \DateTime();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
