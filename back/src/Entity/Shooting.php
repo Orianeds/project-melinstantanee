@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 
 #[ORM\Entity(repositoryClass: ShootingRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -19,7 +20,7 @@ class Shooting
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'shootings')]
-    #[ORM\JoinColumn(name: 'client_id', referencedColumnName: 'id', nullable: false)]
+    #[ORM\JoinColumn(name: 'client_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private ?User $client = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -27,7 +28,7 @@ class Shooting
     private \DateTimeInterface $shootingDate;
 
     #[ORM\Column(length: 255, unique: true)]
-    private string $slug;
+    private ?string $slug = null;
 
     #[ORM\Column(type: 'string', length: 50)]
     #[Assert\NotBlank]
@@ -96,6 +97,21 @@ class Shooting
     public function updateTimestamp(): void
     {
         $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    #[ORM\PrePersist]
+    public function generateSlug(): void
+    {
+        if ($this->slug === null) {
+            $slugger = new AsciiSlugger();
+
+            $clientName = $this->client?->getName() ?? 'shooting';
+            $date = $this->shootingDate?->format('Y-m-d') ?? time();
+
+            $this->slug = strtolower(
+                $slugger->slug($clientName . '-' . $date)
+            );
+        }
     }
 
     // =========================

@@ -12,12 +12,13 @@ use Ramsey\Uuid\Doctrine\UuidGenerator;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\HasLifecycleCallbacks]
 #[UniqueEntity(fields: ['email'], message: 'Un compte avec cet email existe déjà')]
-class User implements PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: 'uuid', unique: true)]
@@ -56,7 +57,7 @@ class User implements PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Shooting::class, mappedBy: 'client')]
     private Collection|ArrayCollection $shootings;
 
-    #[ORM\OneToMany(targetEntity: PasswordCreationToken::class, mappedBy: 'client', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: PasswordCreationToken::class, mappedBy: 'client', orphanRemoval: true, cascade: ['remove'])]
     private Collection $passwordCreationTokens;
 
     public function __construct()
@@ -75,6 +76,11 @@ class User implements PasswordAuthenticatedUserInterface
 
     public function getEmail(): ?string { return $this->email; }
     public function setEmail(string $email): static { $this->email = $email; return $this; }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
 
     public function getRoles(): array
     {
@@ -98,6 +104,10 @@ class User implements PasswordAuthenticatedUserInterface
         $this->password = $passwordHasher->hashPassword($this, $plainPassword);
         $this->mustChangePassword = false;
         return $this;
+    }
+
+    public function eraseCredentials(): void
+    {
     }
 
     public function isAdmin(): ?bool { return $this->isAdmin; }
