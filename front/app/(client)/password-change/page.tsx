@@ -1,11 +1,14 @@
 'use client';
 
+import { Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
 
-export default function PasswordChangePage() {
-  const token = useSearchParams().get('token');
+function PasswordChangeForm() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+
   const router = useRouter();
+
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -14,8 +17,13 @@ export default function PasswordChangePage() {
 
     const res = await fetch('http://localhost:8000/api/password/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, password }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token,
+        password,
+      }),
     });
 
     if (res.ok) {
@@ -34,12 +42,22 @@ export default function PasswordChangePage() {
         type="password"
         required
         value={password}
-        onChange={e => setPassword(e.target.value)}
+        onChange={(e) => setPassword(e.target.value)}
       />
 
       {error && <p>{error}</p>}
 
-      <button type="submit">Valider</button>
+      <button type="submit">
+        Valider
+      </button>
     </form>
+  );
+}
+
+export default function PasswordChangePage() {
+  return (
+    <Suspense fallback={<p>Chargement...</p>}>
+      <PasswordChangeForm />
+    </Suspense>
   );
 }
