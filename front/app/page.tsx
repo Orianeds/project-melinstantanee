@@ -1,5 +1,4 @@
 import { Navbar, Hero, About, Footer } from '@/components'
-import '../app/globals.css';
 
 export default function Home() {
   return (

@@ -1,6 +1,5 @@
 import React from 'react'
 import { Navbar, Footer, NewbornPrice, PortraitPrice, FamilyPrice, PregnancyPrice, CouplePrice } from '@/components'
-import '../globals.css'
 
 
 export default function tarifs () {
